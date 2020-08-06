@@ -1,0 +1,119 @@
+@import 'variables';
+
+button {
+  background-color: transparent;
+  border: 0;
+  color: $white;
+  padding: 6px;
+}
+
+ul {
+  list-style-type: none;
+}
+
+a {
+  color: $green;
+}
+
+table {
+  width: 100%;
+  margin-bottom: 30px;
+
+  tr {
+    border: 0;
+
+    &:nth-child(odd) {
+      background-color: #4a4a4a;
+    }
+
+    &:nth-child(even) {
+      background-color: #2b2b2b;
+    }
+    
+    td {
+      padding: 15px;
+    }
+  }
+}
+
+main,
+header {
+  padding: 60px 60px 0;
+}
+
+footer {
+  background-color: black;
+  padding: 20px;
+  margin-top: 30px;
+}
+
+.img-fluid {
+  max-width: 100%;
+  height: auto;
+  margin-bottom: 8px;
+  display: block;
+  margin: 0 auto 8px;
+}
+
+.App {
+  background-color: #252525;
+  text-align: center;
+  margin: 0 auto;
+  color: white;
+  // padding: 60px 60px 0;
+  min-height: 100vh;
+
+  &-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: calc(10px + 2vmin);
+  }
+
+  &-logo {
+    height: 20vmin;
+    pointer-events: none;
+    margin-bottom: 30px;
+  }
+
+  &-link {
+    color: $green;
+  }
+
+  &-form {
+    margin-bottom: 60px;
+  
+    button {
+      background-color: $green;
+      color: $white;
+      border: 0;
+      padding: 0 15px;
+      border-radius: 0 5px 5px 0;
+      height: 40px;
+      text-transform: uppercase;
+      font-weight: bold;
+    }
+
+    input[type="text"] {
+      border: 0;
+      height: 40px;
+      padding: 0 6px;
+      outline: none;
+      border-radius: 5px 0 0 5px;
+      width: 250px;
+    }
+  }
+
+  &-button {
+    background-color: $green;
+    color: $white;
+    border: 0;
+    padding: 15px;
+    border-radius: 5px;
+    text-transform: uppercase;
+    font-weight: bold;
+    text-decoration: none;
+    font-size: 14px
+  }
+}
