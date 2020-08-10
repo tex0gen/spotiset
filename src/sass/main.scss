@@ -5,6 +5,7 @@ button {
   border: 0;
   color: $white;
   padding: 6px;
+  outline: 0;
 }
 
 ul {
@@ -42,9 +43,10 @@ header {
 }
 
 footer {
-  background-color: black;
+  background-color: #1d1d1d;
   padding: 20px;
   margin-top: 30px;
+  display: none;
 }
 
 .img-fluid {
@@ -62,6 +64,7 @@ footer {
   color: white;
   // padding: 60px 60px 0;
   min-height: 100vh;
+  padding-bottom: 60px;
 
   &-header {
     display: flex;
@@ -79,6 +82,25 @@ footer {
 
   &-link {
     color: $green;
+  }
+
+  &-button-container {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 15px;
+    background-color: #1d1d1d;
+  }
+
+  &-complete {
+    color: white;
+    background-color: #ea4c4c;
+    margin-bottom: 15px;
+    border-radius: 5px;
+    text-align: center;
+    font-size: 16px;
+    padding: 10px 30px;
   }
 
   &-form {
@@ -114,6 +136,12 @@ footer {
     text-transform: uppercase;
     font-weight: bold;
     text-decoration: none;
-    font-size: 14px
+    font-size: 14px;
+    margin: 0 10px;
+
+    &-alt {
+      background-color: white;
+      color: $green;
+    }
   }
 }

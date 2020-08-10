@@ -6,8 +6,8 @@ const app = express()
 const cors = require('cors')
 const port = 4000
 
-getTracklist = async (id, url) => {
-  return await fetch("https://www.1001tracklists.com/tracklist/"+id+"/"+url, {
+app.get('/:trackID/:trackURL', cors(), async (req, res) => {
+  await fetch("https://www.1001tracklists.com/tracklist/"+req.params.trackID+"/"+req.params.trackURL, {
     'Content-Type': 'text/html'
   })
   .then(res => res.text())
@@ -24,14 +24,9 @@ getTracklist = async (id, url) => {
         }
       });
 
-      return JSON.stringify(tracks);
+      res.send(tracks);
     }
   );
-}
-
-app.get('/:trackID/:trackURL', cors(), async (req, res) => {
-  const tracks = await getTracklist(req.params.trackID, req.params.trackURL);
-  res.send(tracks);
 })
 
 app.listen(port, () => {

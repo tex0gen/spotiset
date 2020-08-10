@@ -39,6 +39,7 @@ class App extends Component {
       results: {},
       tracklist: [],
       spotifyList: {},
+      selected: [],
       search: "",
       token: null,
       profile: null,
@@ -46,6 +47,7 @@ class App extends Component {
     };
 
     this.searchRef = createRef();
+    this.selectedRef = createRef();
   }
 
   onChange = e => {
@@ -124,6 +126,8 @@ class App extends Component {
     .then(res => res.json())
     .then(
       (result) => {
+        // localStorage.set('token', token);
+
         this.setState({
           profile: result.id,
           token: token
@@ -167,7 +171,7 @@ class App extends Component {
     );
   }
 
-  createPlaylist = async () => {
+  createPlaylist = async (selected = false) => {
     const { playlistName, profile, token } = this.state;
 
     if (playlistName !== "") {
@@ -184,7 +188,11 @@ class App extends Component {
       .then(res => res.json())
       .then(
         (result) => {
-          this.addTracksToPlaylist(result.id);
+          if (selected === true) {
+            this.addTracksToPlaylist(result.id);
+          } else {
+            this.addTracksToPlaylist(result.id);
+          }
         },
         (error) => {
           console.log('Error', error);
@@ -278,15 +286,15 @@ class App extends Component {
                   artists = spotifyList[index].tracks.items[i].artists[0].name;
                 }
 
-                return <tr key={index}><td>Track {(index + 1)}</td><td>{elem}</td><td width="300"><a target="_blank" rel="noopener noreferrer" href={spotifyList[index].tracks.items[i].external_urls.spotify}><img src={spotifyList[index].tracks.items[i].album.images[2].url} alt={artists + " - " + spotifyList[index].tracks.items[i].name} className="img-fluid" />{artists + " - " + spotifyList[index].tracks.items[i].name}</a></td></tr>;
+                return <tr key={index}><td><input type="checkbox" ref={this.selectedRef} /></td><td>Track {(index + 1)}</td><td>{elem}</td><td width="300"><a target="_blank" rel="noopener noreferrer" href={spotifyList[index].tracks.items[i].external_urls.spotify}><img src={spotifyList[index].tracks.items[i].album.images[2].url} alt={artists + " - " + spotifyList[index].tracks.items[i].name} className="img-fluid" />{artists + " - " + spotifyList[index].tracks.items[i].name}</a></td></tr>;
                 break;
               }
             }
           } else {
-            return <tr key={index}><td>Track {(index + 1)}</td><td>{elem}</td><td>No Match</td></tr>;
+            return <tr key={index}><td></td><td>Track {(index + 1)}</td><td>{elem}</td><td>No Match</td></tr>;
           }
         } else {
-          return <tr key={index}><td>Track {(index + 1)}</td><td>{elem}</td><td>No Match</td></tr>;
+          return <tr key={index}><td></td><td>Track {(index + 1)}</td><td>{elem}</td><td>No Match</td></tr>;
         }
         
       });
@@ -302,13 +310,15 @@ class App extends Component {
   }
 
   render() {
-    const { search, playlistName, matchedTracks } = this.state;
+    const { search, playlistName, matchedTracks, tracklist, complete, results } = this.state;
   
     return (
       <div className="App">
         <header className="App-header">
           <img src={logo} className="App-logo" alt="logo" />
-
+            {(complete) && (
+              <div className="App-complete">Playlist Created</div>
+            )}
             {this.state.token && (
               <form action="?" onSubmit={this.onSubmit} className="App-form">
                 <input type="text"
@@ -330,10 +340,31 @@ class App extends Component {
         </header>
         <main>
           <h1>{playlistName}</h1>
-          <table className="App-results">{this.getResults()}</table>
-          <table className="App-matchlist">{this.showMatchlist()}</table>
+          {(results.length > 0) && (
+            <table className="App-results"><tbody>{this.getResults()}</tbody></table>
+          )}
+
+          {(tracklist.length > 0) && (
+            <table className="App-matchlist">
+              <thead>
+                <tr>
+                  <td></td>
+                  <td>Track #</td>
+                  <td>Artist - Track Name</td>
+                  <td>Spotify Result</td>
+                </tr>
+              </thead>
+              <tbody>
+                {this.showMatchlist()}
+              </tbody>
+            </table>
+          )}
+
           {(matchedTracks.length > 0) && (
-            <button onClick={this.createPlaylist} className="App-button">Create Playlist With Found Tracks</button>
+            <div className="App-button-container">
+              <button onClick={() => this.createPlaylist(true)} className="App-button App-button-alt">Create Playlist With Selected Tracks</button>
+              <button onClick={this.createPlaylist} className="App-button">Create Playlist With All Tracks</button>
+            </div>
           )}
         </main>
         <footer>
