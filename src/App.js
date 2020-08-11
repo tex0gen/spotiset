@@ -110,6 +110,7 @@ class App extends Component {
 
   getResults = () => {
     const { results } = this.state;
+    console.log('MYRES', results);
     if (results.data) {
       return Object.entries(results.data).map((elem, ind) => {
         return <tr key={ind}><td><button onClick={() => this.getTracklist(ind)}>{elem[1].properties.tracklistname}</button></td></tr>;
@@ -340,9 +341,7 @@ class App extends Component {
         </header>
         <main>
           <h1>{playlistName}</h1>
-          {(results.length > 0) && (
-            <table className="App-results"><tbody>{this.getResults()}</tbody></table>
-          )}
+          <table className="App-results"><tbody>{this.getResults()}</tbody></table>
 
           {(tracklist.length > 0) && (
             <table className="App-matchlist">
