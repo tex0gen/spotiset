@@ -1,12 +1,12 @@
-import React, { Component, createRef } from 'react';
+import React, { createRef, useEffect, useState } from 'react';
 import logo from './logo.png';
 import './sass/main.scss';
 
-export const authEndpoint = 'https://accounts.spotify.com/authorize/';
-
+const authEndpoint = 'https://accounts.spotify.com/authorize/';
 const baseURL = 'https://api.spotify.com/v1';
 const clientId = "919fdd924dc248feafc11a463bb14f69";
 const redirectUri = "http://localhost:3000";
+// const redirectUri = "spotiset://";
 const scopes = [
   'user-read-email',
   'playlist-read-private',
@@ -15,6 +15,7 @@ const scopes = [
 ];
 
 const hash = window.location.hash
+// const hash = window.location.search
   .substring(1)
   .split("&")
   .reduce((initial, item) => {
@@ -28,155 +29,167 @@ const hash = window.location.hash
 
 window.location.hash = "";
 
-class App extends Component {
-  constructor(props) {
-    super(props)
+const App = () => {
+  const searchRef = createRef();
 
-    this.state = {
+  const [loading, setLoading] = useState(false);
+  const [token, setToken] = useState(null);
+  const [spotifyList, setSpotifyList] = useState({});
+  const [myData, setData] = useState({
+    complete: false,
+    playlistName: "",
+    playlistID: "",
+    matchedTracks: [],
+    results: {},
+    tracklist: [],
+    selected: [],
+    selectList: [],
+    search: "",
+    profile: null,
+  });
+
+  useEffect(() => {
+    let _token = hash.access_token;
+
+    if (_token) {
+      const getCurrentUser = async (token) => {
+        await fetch(`${baseURL}/me`, {
+          headers: {
+            'Authorization': 'Bearer ' + token
+          }
+        })
+        .then(res => res.json())
+        .then(
+          (result) => {
+            setData(prevState => ({
+              ...prevState,
+              profile: result.id,
+            }));
+            setToken(token);
+          },
+          (error) => {
+            alert('Could not get the current user');
+            resetData();
+          }
+        );
+      }
+
+      getCurrentUser(_token);
+    }
+  }, []);
+
+  useEffect(() => {
+    showTracklist();
+  }, [myData.tracklist]);
+
+  useEffect(() => {
+    getMatchedlist();
+  }, [spotifyList]);
+
+  const resetData = () => {
+    setSpotifyList({});
+    setData(prevState => ({
+      ...prevState,
+      complete: true,
       playlistName: "",
       playlistID: "",
       matchedTracks: [],
       results: {},
       tracklist: [],
-      spotifyList: {},
-      selected: [],
-      search: "",
-      token: null,
-      profile: null,
-      loading: false,
-    };
-
-    this.searchRef = createRef();
-    this.selectedRef = createRef();
+    }));
   }
 
-  onChange = e => {
-    this.setState({ search: e.target.value });
+  const searchOnChange = e => {
+    setData(prevState => ({
+      ...prevState,
+      search: searchRef.current.value
+    }));
   }
 
-  onSubmit = e => {
+  const onSubmit = async e => {
     e.preventDefault();
 
-    const { search } = this.state;
+    const { search } = myData;
 
-    this.setState({loading: true});
+    setLoading(true);
 
-    fetch("https://www.1001tracklists.com/ajax/search_tracklist.php?p="+search+"&noIDFieldCheck=true&fixedMode=true&sf=p")
-      .then(res => res.json())
-      .then(
-        (result) => {
-          this.setState({
-            loading: false,
-            results: result
-          });
-        },
-        (error) => {
-          this.setState({
-            loading: false,
-            error
-          });
-        }
-      );
+    const response = await fetch("https://www.1001tracklists.com/ajax/search_tracklist.php?p="+search+"&noIDFieldCheck=true&fixedMode=true&sf=p");
+    const tracks = await response.json();
+
+    setData(prevState => ({
+      ...prevState,
+      results: tracks
+    }));
+
+    setLoading(false);
   }
 
-  showTracklist = () => {
-    const { tracklist } = this.state;
+  const showTracklist = () => {
+    const { tracklist } = myData;
 
     if (tracklist.length > 0) {
       tracklist.forEach((elem, ind) => {
-        this.searchTrack(elem, ind);
+        console.log('looping..');
+        searchTrack(elem, ind);
       });
 
-      this.getMatchedlist();
+      getMatchedlist();
     }
   }
 
-  getTracklist = async (ind) => {
-    const { results } = this.state;
+  const getTracklist = async (ind) => {
+    const { results } = myData;
 
-    this.setState({playlistName: results.data[ind].properties.tracklistname, loading: true});
+    setData(prevState => ({
+      ...prevState,
+      playlistName: results.data[ind].properties.tracklistname
+    }));
 
-    await fetch("http://localhost:4000/"+results.data[ind].properties.id_unique+"/"+encodeURI(results.data[ind].properties.tracklistname)+".html")
-    .then(res => res.json())
-    .then(
-      (result) => {
-        this.setState({tracklist: result, loading: false, results: {}}, this.showTracklist);
-      },
-      (error) => {
-        console.log(error);
-      }
-    )
+    setLoading(true);
+
+    const response = await fetch("http://localhost:4000/"+results.data[ind].properties.id_unique+"/"+encodeURI(results.data[ind].properties.tracklistname)+".html");
+    const tracklisting = await response.json();
+
+    setData(prevState => ({
+      ...prevState,
+      tracklist: tracklisting,
+      results: {}
+    }));
+
+    setLoading(false);
   }
 
-  getResults = () => {
-    const { results } = this.state;
-    console.log('MYRES', results);
+  const getResults = () => {
+    const { results } = myData;
     if (results.data) {
       return Object.entries(results.data).map((elem, ind) => {
-        return <tr key={ind}><td><button onClick={() => this.getTracklist(ind)}>{elem[1].properties.tracklistname}</button></td></tr>;
+        return <tr key={ind}><td><button onClick={() => getTracklist(ind)}>{elem[1].properties.tracklistname}</button></td></tr>;
       });
     }
   }
 
-  getCurrentUser = (token) => {
-    fetch(`${baseURL}/me`, {
-      headers: {
-        'Authorization':'Bearer ' + token
-      }
-    })
-    .then(res => res.json())
-    .then(
-      (result) => {
-        // localStorage.set('token', token);
-
-        this.setState({
-          profile: result.id,
-          token: token
-        });
-      },
-      (error) => {
-        // this.setState({
-        //   loading: false,
-        //   error
-        // });
-      }
-    );
-  }
-
-  searchTrack = async (query, index) => {
-    const { token } = this.state;
-
+  const searchTrack = async (query, index) => {
+    console.log('Doing function');
     query = query.replace(/ ft.+-/i, '');
     query = query.replace('- ', '');
 
-    await fetch(`${baseURL}/search?q=${query}&type=track`, {
+    const response = await fetch(`${baseURL}/search?q=${query}&type=track`, {
       headers: {
         'Authorization': 'Bearer ' + token
       },
-    })
-    .then(res => res.json())
-    .then(
-      (result) => {
-        this.setState(prevState => ({spotifyList: {
-            ...prevState.spotifyList,
-            [index]: result
-          }
-        }), this.getMatchedlist);
-      },
-      (error) => {
-        // this.setState({
-        //   loading: false,
-        //   error
-        // });
-      }
-    );
+    });
+    const track = await response.json();
+
+    setSpotifyList(prevState => ({
+      ...prevState,
+      [index]: track
+    }));
   }
 
-  createPlaylist = async (selected = false) => {
-    const { playlistName, profile, token } = this.state;
-
+  const createPlaylist = async (selected = false) => {
+    const { playlistName, profile } = myData;
     if (playlistName !== "") {
-      await fetch(`${baseURL}/users/${profile}/playlists`, {
+      const response = await fetch(`${baseURL}/users/${profile}/playlists`, {
         method: 'POST',
         headers: {
           'Authorization': 'Bearer ' + token,
@@ -185,27 +198,29 @@ class App extends Component {
         body: JSON.stringify({
           name: playlistName
         })
-      })
-      .then(res => res.json())
-      .then(
-        (result) => {
-          if (selected === true) {
-            this.addTracksToPlaylist(result.id);
-          } else {
-            this.addTracksToPlaylist(result.id);
-          }
-        },
-        (error) => {
-          console.log('Error', error);
-        }
-      );
+      });
+      const playlist = await response.json();
+
+      if (selected === true) {
+        addTracksToPlaylist(playlist.id, true);
+      } else {
+        addTracksToPlaylist(playlist.id, false);
+      }
     }
   }
 
-  addTracksToPlaylist = async (playlist) => {
-    const {matchedTracks, token} = this.state;
+  const addTracksToPlaylist = async (playlist, selected) => {
+    const { matchedTracks, selectList } = myData;
 
-    if (matchedTracks) {
+    let tracksToAdd;
+
+    if (selected) {
+      tracksToAdd = selectList;
+    } else {
+      tracksToAdd = matchedTracks;
+    }
+
+    if (tracksToAdd) {
       await fetch(`${baseURL}/playlists/${playlist}/tracks`, {
         method: 'POST',
         headers: {
@@ -213,34 +228,35 @@ class App extends Component {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          uris: matchedTracks
+          uris: tracksToAdd
         })
-      })
-      .then(res => res.json())
-      .then(
-        (result) => {
-          this.setState({
-            complete: true,
-            playlistName: "",
-            playlistID: "",
-            matchedTracks: [],
-            results: {},
-            tracklist: [],
-            spotifyList: {},
-          });
-        },
-        (error) => {
-          console.log('Error', error);
-        }
-      );
+      });
+
+      setData(prevState => ({
+        ...prevState,
+        complete: true
+      }));
+    } else {
+      alert('No tracks to add');
     }
   }
 
-  getMatchedlist = () => {
-    const { spotifyList, tracklist } = this.state;
+  const selectTrack = (e) => {
+    const { selectList } = myData;
+
+    selectList.push(e.target.value);
+
+    setData(prevState => ({
+      ...prevState,
+      selectList: selectList
+    }));
+  }
+
+  const getMatchedlist = () => {
+    const { tracklist } = myData;
 
     let matched = [];
-
+    
     if (tracklist) {
       if (tracklist.length === Object.keys(spotifyList).length) {
         tracklist.forEach((elem, index) => {
@@ -260,118 +276,121 @@ class App extends Component {
         });
 
         if (matched.length > 0) {
-          this.setState({matchedTracks: matched});
+          setData(prevState => ({
+            ...prevState,
+            matchedTracks: matched
+          }))
         }
       }
     }
   }
 
-  showMatchlist = () => {
-    const { spotifyList, tracklist } = this.state;
+  const showMatchlist = () => {
+    const { tracklist } = myData;
 
     if (tracklist) {
       return tracklist.map((elem, index) => {
         let splitTrackArtists = elem.split(' - '),
             trackName = splitTrackArtists[1].replace(/\((.*)\)/i, '');
         
-        if (spotifyList[index]) {
-          if (spotifyList[index].tracks.items.length > 0) {
-            for (var i = 0; i < spotifyList[index].tracks.items.length; i++) {
-              if (spotifyList[index].tracks.items[i].name.includes(trackName)) {
-                let artists = "";
-                if (spotifyList[index].tracks.items[i].artists.length > 1) {
-                  spotifyList[index].tracks.items[i].artists.map((artist, artistIndex) => {
-                    artists += (spotifyList[index].tracks.items[i].artists.length === (artistIndex + 1)) ? artist.name:artist.name + ' & ';
-                  });
-                } else {
-                  artists = spotifyList[index].tracks.items[i].artists[0].name;
-                }
-
-                return <tr key={index}><td><input type="checkbox" ref={this.selectedRef} /></td><td>Track {(index + 1)}</td><td>{elem}</td><td width="300"><a target="_blank" rel="noopener noreferrer" href={spotifyList[index].tracks.items[i].external_urls.spotify}><img src={spotifyList[index].tracks.items[i].album.images[2].url} alt={artists + " - " + spotifyList[index].tracks.items[i].name} className="img-fluid" />{artists + " - " + spotifyList[index].tracks.items[i].name}</a></td></tr>;
-                break;
+        if (spotifyList[index] && spotifyList[index].tracks.items.length > 0) {
+          for (let i = 0; i < spotifyList[index].tracks.items.length; i++) {
+            if (spotifyList[index].tracks.items[i].name.includes(trackName)) {
+              let artists = "";
+              if (spotifyList[index].tracks.items[i].artists.length > 1) {
+                spotifyList[index].tracks.items[i].artists.forEach((artist, artistIndex) => {
+                  artists += (spotifyList[index].tracks.items[i].artists.length === (artistIndex + 1)) ? artist.name:artist.name + ' & ';
+                });
+              } else {
+                artists = spotifyList[index].tracks.items[i].artists[0].name;
               }
+
+              return <tr key={index}><td><input type="checkbox" onChange={(e) => selectTrack(e)} value={spotifyList[index].tracks.items[i].uri} /></td><td>Track {(index + 1)}</td><td>{elem}</td><td width="300"><a target="_blank" rel="noopener noreferrer" href={spotifyList[index].tracks.items[i].external_urls.spotify}><img src={spotifyList[index].tracks.items[i].album.images[2].url} alt={artists + " - " + spotifyList[index].tracks.items[i].name} className="img-fluid" />{artists + " - " + spotifyList[index].tracks.items[i].name}</a></td></tr>;
             }
-          } else {
-            return <tr key={index}><td></td><td>Track {(index + 1)}</td><td>{elem}</td><td>No Match</td></tr>;
           }
         } else {
           return <tr key={index}><td></td><td>Track {(index + 1)}</td><td>{elem}</td><td>No Match</td></tr>;
         }
         
+        return <tr key={index}><td></td><td>Track {(index + 1)}</td><td>{elem}</td><td>No Match</td></tr>;
       });
     }
   }
 
-  componentDidMount() {
-    let _token = hash.access_token;
-
-    if (_token) {
-      this.getCurrentUser(_token);
+  const getMainData = () => {
+    if (loading) {
+      return (<main className="text-center">Loading...</main>)
+    } else {
+      return (
+        <main>
+          <h1>{playlistName}</h1>
+          <table className="App-results"><tbody>{getResults()}</tbody></table>
+      
+          {
+            (tracklist.length > 0) && (
+              <table className="App-matchlist">
+                <thead>
+                  <tr>
+                    <td></td>
+                    <td>Track #</td>
+                    <td>Artist - Track Name</td>
+                    <td>Spotify Result</td>
+                  </tr>
+                </thead>
+                <tbody>
+                  {showMatchlist()}
+                </tbody>
+              </table>
+            )
+          }
+      
+          {
+            (matchedTracks.length > 0) && (
+              <div className="App-button-container">
+                <button onClick={() => createPlaylist(true)} className="App-button App-button-alt">Create Playlist With Selected Tracks</button>
+                <button onClick={() => createPlaylist(false)} className="App-button">Create Playlist With All Tracks</button>
+              </div>
+            )
+          }
+        </main>
+      );
     }
   }
 
-  render() {
-    const { search, playlistName, matchedTracks, tracklist, complete, results } = this.state;
-  
-    return (
-      <div className="App">
-        <header className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
-            {(complete) && (
-              <div className="App-complete">Playlist Created</div>
-            )}
-            {this.state.token && (
-              <form action="?" onSubmit={this.onSubmit} className="App-form">
-                <input type="text"
-                  ref={this.searchRef}
-                  value={search}
-                  onChange={this.onChange}
-                  placeholder="Search a DJ set.."
-                />
-                <button onClick={this.search}>{(this.state.loading) ? 'Loading..':'Search'}</button>
-              </form>
-            )}
+  const { search, playlistName, matchedTracks, tracklist, complete } = myData;
 
-            {!this.state.token && (
-              <a className="App-button" href={`${authEndpoint}?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scopes.join("%20")}&response_type=token&show_dialog=true`}>
-                Login to Spotify
-              </a>
-            )}
-
-        </header>
-        <main>
-          <h1>{playlistName}</h1>
-          <table className="App-results"><tbody>{this.getResults()}</tbody></table>
-
-          {(tracklist.length > 0) && (
-            <table className="App-matchlist">
-              <thead>
-                <tr>
-                  <td></td>
-                  <td>Track #</td>
-                  <td>Artist - Track Name</td>
-                  <td>Spotify Result</td>
-                </tr>
-              </thead>
-              <tbody>
-                {this.showMatchlist()}
-              </tbody>
-            </table>
+  return (
+    <div className="App">
+      <header className="App-header">
+        <img src={logo} className="App-logo" alt="logo" />
+          {(complete) && (
+            <div className="App-complete">Playlist Created</div>
           )}
 
-          {(matchedTracks.length > 0) && (
-            <div className="App-button-container">
-              <button onClick={() => this.createPlaylist(true)} className="App-button App-button-alt">Create Playlist With Selected Tracks</button>
-              <button onClick={this.createPlaylist} className="App-button">Create Playlist With All Tracks</button>
-            </div>
+          {token && (
+          <form className="App-form" onSubmit={(e) => onSubmit(e)}>
+              <input type="text"
+                ref={searchRef}
+                value={search}
+                onChange={(e) => searchOnChange(e)}
+                placeholder="Search a DJ set.."
+              />
+              <button type="submit">{(loading) ? 'Loading..':'Search'}</button>
+            </form>
           )}
-        </main>
-        <footer>
-          Spotiset 2020
-        </footer>
-      </div>
-    );
-  }
+
+          {!token && (
+            <a className="App-button" rel="noopener noreferrer" href={`${authEndpoint}?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scopes.join("%20")}&response_type=token&show_dialog=true`}>
+              Login to Spotify
+            </a>
+          )}
+      </header>
+      {getMainData()}
+      <footer>
+        Spotiset 2020
+      </footer>
+    </div>
+  );
 }
 
 export default App;
