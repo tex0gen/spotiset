@@ -1,14 +1,14 @@
-#Spotiset
+# Spotiset
 
-Search a DJ set and add the tracks that appeared in the selected set to a Spotify list.
-This was built in a couple of days as a showcase application. The code needs a tidy.
+Search for an artist or a DJ set and select the setlist you are looking for.
+Spotiset will automatically grab those tracks from Spotify if they exist on the platform.
+Automatically create a playlist based on the entire set or select individual tracks from the setlist to build your playlist from.
 
 To run:
 
 ``cd spotiset``
-``npm start``
-
-Run new terminal for backend and run:
-
-``cd spotiset-be``
+``npm install``
+``cd spotiset/backend``
+``npm install``
+``cd ../``
 ``npm start``
