@@ -5,8 +5,8 @@ import './sass/main.scss';
 const authEndpoint = 'https://accounts.spotify.com/authorize/';
 const baseURL = 'https://api.spotify.com/v1';
 const clientId = "919fdd924dc248feafc11a463bb14f69";
-const redirectUri = "http://localhost:3000";
-// const redirectUri = "spotiset://";
+// const redirectUri = "http://localhost:3000";
+const redirectUri = "spotiset://";
 const scopes = [
   'user-read-email',
   'playlist-read-private',
@@ -14,8 +14,8 @@ const scopes = [
   'playlist-modify-public'
 ];
 
-const hash = window.location.hash
-// const hash = window.location.search
+// const hash = window.location.hash
+const hash = window.location.search
   .substring(1)
   .split("&")
   .reduce((initial, item) => {
@@ -86,11 +86,15 @@ const App = () => {
     getMatchedlist();
   }, [spotifyList]);
 
+  useEffect(() => {
+    resetData();
+  }, [myData.complete]);
+
   const resetData = () => {
     setSpotifyList({});
     setData(prevState => ({
       ...prevState,
-      complete: true,
+      complete: false,
       playlistName: "",
       playlistID: "",
       matchedTracks: [],
@@ -169,7 +173,6 @@ const App = () => {
   }
 
   const searchTrack = async (query, index) => {
-    console.log('Doing function');
     query = query.replace(/ ft.+-/i, '');
     query = query.replace('- ', '');
 
@@ -256,7 +259,7 @@ const App = () => {
     const { tracklist } = myData;
 
     let matched = [];
-    
+
     if (tracklist) {
       if (tracklist.length === Object.keys(spotifyList).length) {
         tracklist.forEach((elem, index) => {
