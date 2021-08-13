@@ -126,11 +126,9 @@ const App = () => {
 
   const showTracklist = () => {
     const { tracklist } = myData;
-    console.log(tracklist);
 
     if (tracklist.length > 0) {
       tracklist.forEach((elem, ind) => {
-        console.log('looping..');
         searchTrack(elem, ind);
       });
 
@@ -151,7 +149,6 @@ const App = () => {
     const uri = results.data[ind].properties.tracklistname;
     let newuri = uri.replace(/\s+/g, '-').toLowerCase();
     newuri = newuri.replace('---', '-').toLowerCase();
-    console.log(newuri);
     const response = await fetch("http://localhost:4000/" + results.data[ind].properties.id_unique + "/" + encodeURI(newuri)+".html");
     const tracklisting = await response.json();
 
@@ -174,7 +171,6 @@ const App = () => {
   }
 
   const searchTrack = async (query, index) => {
-    console.log('Doing function');
     query = query.replace(/ ft.+-/i, '');
     query = query.replace('- ', '');
 
