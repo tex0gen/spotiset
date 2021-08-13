@@ -126,6 +126,7 @@ const App = () => {
 
   const showTracklist = () => {
     const { tracklist } = myData;
+    console.log(tracklist);
 
     if (tracklist.length > 0) {
       tracklist.forEach((elem, ind) => {
@@ -147,7 +148,11 @@ const App = () => {
 
     setLoading(true);
 
-    const response = await fetch("http://localhost:4000/"+results.data[ind].properties.id_unique+"/"+encodeURI(results.data[ind].properties.tracklistname)+".html");
+    const uri = results.data[ind].properties.tracklistname;
+    let newuri = uri.replace(/\s+/g, '-').toLowerCase();
+    newuri = newuri.replace('---', '-').toLowerCase();
+    console.log(newuri);
+    const response = await fetch("http://localhost:4000/" + results.data[ind].properties.id_unique + "/" + encodeURI(newuri)+".html");
     const tracklisting = await response.json();
 
     setData(prevState => ({
