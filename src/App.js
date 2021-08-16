@@ -20,7 +20,7 @@ const hash = window.location.hash
   .split("&")
   .reduce((initial, item) => {
     if (item) {
-      var parts = item.split("=");
+      const parts = item.split("=");
       initial[parts[0]] = decodeURIComponent(parts[1]);
     }
 
@@ -381,7 +381,7 @@ const App = () => {
           )}
 
           {!token && (
-            <a className="App-button" rel="noopener noreferrer" href={`${authEndpoint}?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scopes.join("%20")}&response_type=token&show_dialog=true`}>
+          <a className="App-button" rel="noopener noreferrer" href={`${authEndpoint}?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scopes.join("%20")}&response_type=token&show_dialog=false`}>
               Login to Spotify
             </a>
           )}
