@@ -171,8 +171,14 @@ const App = () => {
   }
 
   const searchTrack = async (query, index) => {
-    query = query.replace(/ ft.+-/i, '');
-    query = query.replace('- ', '');
+    query = query.replace(/ ft\..+?- /i, ' '); // Removes 'ft. Sirah -'
+    query = query.replace(/ & /i, ' '); // Replaces ' & ' with a space
+    query = query.replace('- ', ''); // Removes '- ' if present
+    // remove bracket left
+    query = query.replace('(', '');
+    query = query.replace(')', '');
+    // lowercase query
+    query = query.toLowerCase();
 
     const response = await fetch(`${baseURL}/search?q=${query}&type=track`, {
       headers: {
@@ -180,6 +186,8 @@ const App = () => {
       },
     });
     const track = await response.json();
+
+    console.log(query, track);
 
     setSpotifyList(prevState => ({
       ...prevState,
@@ -264,15 +272,18 @@ const App = () => {
         tracklist.forEach((elem, index) => {
           let splitTrackArtists = elem.split(' - '),
               trackName = splitTrackArtists[1].replace(/\((.*)\)/i, '');
-          
+          // console.log(trackName);
+          // if (trackName === 'Moar Ghosts N Stuff') {
+          //   console.log('spl', spotifyList[index]);
+          // }
           if (spotifyList[index]) {
             if (spotifyList[index].tracks.items.length > 0) {
-              for (var i = 0; i < spotifyList[index].tracks.items.length; i++) {
-                if (spotifyList[index].tracks.items[i].name.includes(trackName)) {
-                  matched.push(spotifyList[index].tracks.items[i].uri);
-                  break;
-                }
-              }
+              // for (var i = 0; i < spotifyList[index].tracks.items.length; i++) {
+                // if (spotifyList[index].tracks.items[i].name.includes(trackName)) {
+                  matched.push(spotifyList[index].tracks.items[0].uri);
+                  // break;
+                // }
+              // }
             }
           }
         });
@@ -297,7 +308,7 @@ const App = () => {
         
         if (spotifyList[index] && spotifyList[index].tracks.items.length > 0) {
           for (let i = 0; i < spotifyList[index].tracks.items.length; i++) {
-            if (spotifyList[index].tracks.items[i].name.includes(trackName)) {
+            // if (spotifyList[index].tracks.items[i].name.includes(trackName)) {
               let artists = "";
               if (spotifyList[index].tracks.items[i].artists.length > 1) {
                 spotifyList[index].tracks.items[i].artists.forEach((artist, artistIndex) => {
@@ -309,7 +320,7 @@ const App = () => {
 
               return <tr key={index}><td><input type="checkbox" onChange={(e) => selectTrack(e)} value={spotifyList[index].tracks.items[i].uri} /></td><td>Track {(index + 1)}</td><td>{elem}</td><td width="300"><a target="_blank" rel="noopener noreferrer" href={spotifyList[index].tracks.items[i].external_urls.spotify}><img src={spotifyList[index].tracks.items[i].album.images[2].url} alt={artists + " - " + spotifyList[index].tracks.items[i].name} className="img-fluid" />{artists + " - " + spotifyList[index].tracks.items[i].name}</a></td></tr>;
             }
-          }
+          // }
         } else {
           return <tr key={index}><td></td><td>Track {(index + 1)}</td><td>{elem}</td><td>No Match</td></tr>;
         }

@@ -7,6 +7,7 @@ const cors = require('cors')
 const port = 4000
 
 app.get('/:trackID/:trackURL', cors(), async (req, res) => {
+  console.log("Requesting tracklist: https://www.1001tracklists.com/tracklist/" + req.params.trackID + "/" + req.params.trackURL);
   await fetch("https://www.1001tracklists.com/tracklist/" + req.params.trackID + "/" + req.params.trackURL, {
     'Content-Type': 'text/html',
     headers: {
