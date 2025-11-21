@@ -40,5 +40,8 @@
   "devDependencies": {
     "concurrently": "^6.2.1",
     "sass": "^1.94.2"
+  },
+  "engines": {
+    "node": "22.0.0^"
   }
 }
