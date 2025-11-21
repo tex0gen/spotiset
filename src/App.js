@@ -145,12 +145,14 @@ const App = () => {
     }));
 
     setLoading(true);
-
+    console.log('theURL', results.data[ind]);
     const uri = results.data[ind].properties.tracklistname;
     let newuri = uri.replace(/\s+/g, '-').toLowerCase();
     newuri = newuri.replace('---', '-').toLowerCase();
     const response = await fetch("http://localhost:4000/" + results.data[ind].properties.id_unique + "/" + encodeURI(newuri)+".html");
     const tracklisting = await response.json();
+
+    console.log('TL', tracklisting);
 
     setData(prevState => ({
       ...prevState,
@@ -262,41 +264,67 @@ const App = () => {
     }));
   }
 
+  const clean = str =>
+    str
+      .toLowerCase()
+      .replace(/ *\([^)]*\) */g, "")     // remove brackets
+      .replace(/[^a-z0-9& ]/gi, "")     // remove punctuation
+      .replace(/\s+/g, " ")             // normalise spacing
+      .trim();
+
+  const similarity = (a, b) => {
+    const aWords = new Set(a.split(" "));
+    const bWords = new Set(b.split(" "));
+    const overlap = [...aWords].filter(w => bWords.has(w));
+    return overlap.length / Math.max(aWords.size, bWords.size);
+  };
+
   const getMatchedlist = () => {
     const { tracklist } = myData;
+    const matched = [];
 
-    let matched = [];
-    
-    if (tracklist) {
-      if (tracklist.length === Object.keys(spotifyList).length) {
-        tracklist.forEach((elem, index) => {
-          let splitTrackArtists = elem.split(' - '),
-              trackName = splitTrackArtists[1].replace(/\((.*)\)/i, '');
-          // console.log(trackName);
-          // if (trackName === 'Moar Ghosts N Stuff') {
-          //   console.log('spl', spotifyList[index]);
-          // }
-          if (spotifyList[index]) {
-            if (spotifyList[index].tracks.items.length > 0) {
-              // for (var i = 0; i < spotifyList[index].tracks.items.length; i++) {
-                // if (spotifyList[index].tracks.items[i].name.includes(trackName)) {
-                  matched.push(spotifyList[index].tracks.items[0].uri);
-                  // break;
-                // }
-              // }
-            }
-          }
-        });
+    if (!tracklist) return;
 
-        if (matched.length > 0) {
-          setData(prevState => ({
-            ...prevState,
-            matchedTracks: matched
-          }))
+    tracklist.forEach((entry, index) => {
+      const [artistRaw, trackRaw] = entry.split(" - ");
+
+      const entryArtist = clean(artistRaw || "");
+      const entryTrack = clean(trackRaw || "");
+
+      const candidateItems = spotifyList[index]?.tracks?.items || [];
+
+      let bestMatch = null;
+      let bestScore = 0;
+
+      candidateItems.forEach(item => {
+        const spArtist = clean(item.artists.map(a => a.name).join(" "));
+        const spTrack = clean(item.name);
+
+        const artistScore = similarity(entryArtist, spArtist);
+        const trackScore = similarity(entryTrack, spTrack);
+        const score = artistScore * 0.6 + trackScore * 0.4;
+
+        if (score > bestScore) {
+          bestScore = score;
+          bestMatch = item;
         }
-      }
-    }
-  }
+      });
+
+      // ❌ Reject if similarity is too low
+      if (bestScore < 0.35) return;
+
+      // Only add the Spotify URI if we’re confident
+      matched.push(bestMatch.uri);
+    });
+
+    // ❌ Remove duplicates by converting to a Set
+    const unique = [...new Set(matched)];
+
+    setData(prev => ({
+      ...prev,
+      matchedTracks: unique,
+    }));
+  };
 
   const showMatchlist = () => {
     const { tracklist } = myData;
